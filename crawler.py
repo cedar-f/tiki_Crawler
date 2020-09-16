@@ -38,29 +38,37 @@ class Crawler:
         html = self.driver.page_source
         product_json = self.get_product_info(html)
 
-        wait = WebDriverWait(self.driver, 1)
+        wait = WebDriverWait(self.driver, 5)
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        review_html = self.driver.find_element_by_css_selector('div.customer-reviews')
+        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.customer-reviews')))
+        review_html = self.driver.find_element_by_css_selector("div.customer-reviews").get_attribute('innerHTML')
 
         self.get_product_review(review_html)
 
         next_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a.next')))
         next_button.click()
-        time.sleep(1000)
 
     def get_product_info(self, product_html):
         product = {}
-        product["name"] = product_html.find("h1", class_="title").get_text()
+        html = BeautifulSoup(product_html, "html.parser")
+        product["name"] = html.find("h1", class_="title").get_text()
         product["info"] = {}
-        info_table = product_html.find("table").find("tbody").find_all("tr")
+        info_table = html.find("table").find("tbody").find_all("tr")
         for tr in info_table:
             product["info"][tr.find_all("td")[0].get_text()] = tr.find_all("td")[1].get_text()
         print(product)
         return product
 
-    # def test(self):
-    #     for link in self.get_link_to_product():
-    #         self.get_product_info(self.get_product_html(link))
     def get_product_review(self, review_html):
         html = BeautifulSoup(review_html, 'html.parser')
-        review = {}
+        review = []
+        review_container = html.find_all("div", class_="review-comment")
+        for r in review_container:
+            star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
+            conversation = []
+            conversation.append({r.find('span',class_='review-comment__avatar-name').get_text():r.find('div',
+                                                                                             class_='review-comment__content').get_text()})
+            print(conversation)
+    def test(self):
+        for link in self.get_link_to_product():
+            self.get_product_json(link)
