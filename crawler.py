@@ -52,7 +52,7 @@ class Crawler:
         html = self.driver.page_source
         product_json = self.get_product_info(html)
 
-        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/10 * 8);")
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         for x in range(0, 3):
             try:
                 self.waiting_for_element.until(
@@ -88,7 +88,8 @@ class Crawler:
                     print('END OF PRODUCT')
                     break
             except Exception as err:
-                print("###ERR AT 1th TRY: " + str(err))
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
+                print("###ERR AT 1st TRY: " + str(err))
                 print('try to load page: ' + str(x))
             print("err at: " + product_link)
 
