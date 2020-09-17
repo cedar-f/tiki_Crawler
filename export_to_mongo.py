@@ -11,5 +11,4 @@ class Export:
     def to_mongo(self, product):
         mydb = self.mongo["mydatabase"]
         mycol = mydb["tiki"]
-        temp = json.dumps(product)
-        x = mycol.insert(product)
+        x = mycol.insert(product,check_keys=False)

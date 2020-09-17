@@ -25,8 +25,8 @@ class Crawler:
         self.Url = begin_url
         self.driver = webdriver.Chrome(chrome_options=self.chrome_option,
                                        executable_path='/home/cedar-f/data/chrome_selenium_driver/chromedriver_linux64/chromedriver')
-        self.waiting_for_page = WebDriverWait(self.driver, 50)
-        self.waiting_for_element = WebDriverWait(self.driver, 30)
+        self.waiting_for_page = WebDriverWait(self.driver, 60)
+        self.waiting_for_element = WebDriverWait(self.driver, 40)
         self.export = e()
 
     def get_page_html(self, url):
@@ -77,18 +77,20 @@ class Crawler:
                                     'innerHTML')
                                 reviews += (self.get_product_review(review_html))
                                 break
-                            except:
+                            except Exception as err:
+                                print("###ERR AT 3th TRY: " + str(err))
                                 if i > 0:
                                     print("====>try to get review: " + str(i))
-                except:
+                except Exception as err:
                     product_json['reviews'] = reviews
                     print(product_json)
                     self.export.to_mongo(product_json)
                     print('END OF PRODUCT')
                     break
-            except:
+            except Exception as err:
+                print("###ERR AT 1th TRY: " + str(err))
                 print('try to load page: ' + str(x))
-            print("err at: "+product_link)
+            print("err at: " + product_link)
 
     def expand_review(self):
         expand_review_buttons = self.driver.find_elements_by_css_selector('div.review-comment__count')
