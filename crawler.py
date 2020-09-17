@@ -88,7 +88,7 @@ class Crawler:
                     print('END OF PRODUCT')
                     break
             except Exception as err:
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);")
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/4 * 3);")
                 print("###ERR AT 1st TRY: " + str(err))
                 print('try to load page: ' + str(x))
             print("err at: " + product_link)
