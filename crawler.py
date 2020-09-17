@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import time
-
+from export_to_mongo import Export as e
 from selenium.webdriver.support.wait import WebDriverWait
 
 
@@ -18,25 +18,35 @@ class Crawler:
     driver = ''
     waiting_for_page = ''
     waiting_for_element = ''
+    export = ''
 
     def __init__(self, base_Url, begin_url):
         self.base_Url = base_Url
         self.Url = begin_url
         self.driver = webdriver.Chrome(chrome_options=self.chrome_option,
                                        executable_path='/home/cedar-f/data/chrome_selenium_driver/chromedriver_linux64/chromedriver')
-        self.waiting_for_page = WebDriverWait(self.driver, 30)
-        self.waiting_for_element = WebDriverWait(self.driver, 8)
+        self.waiting_for_page = WebDriverWait(self.driver, 50)
+        self.waiting_for_element = WebDriverWait(self.driver, 30)
+        self.export = e()
 
-    def get_link_to_product(self):
-        page = urllib.request.urlopen(self.Url)
+    def get_page_html(self, url):
+        page = urllib.request.urlopen(url)
         soup = BeautifulSoup(page, 'html.parser')
+        return soup
+
+    def get_link_to_next_page(self, soup):
+        next_page_link = self.base_Url + soup.find('a', class_='next').get('href')
+        return next_page_link
+
+    def get_link_to_product(self, soup):
         list_container = soup.find_all('div', class_="product-item")
         list_link = list()
         for container in list_container:
             list_link.append(self.base_Url + container.find('a').get('href'))
         return list_link
 
-    def get_product_json(self, product_link):
+    def get_product_json_and_save_to_mongo(self, product_link):
+        print("crawling at: " + product_link)
         self.driver.get(product_link)
 
         html = self.driver.page_source
@@ -73,10 +83,12 @@ class Crawler:
                 except:
                     product_json['reviews'] = reviews
                     print(product_json)
+                    self.export.to_mongo(product_json)
                     print('END OF PRODUCT')
                     break
             except:
                 print('try to load page: ' + str(x))
+            print("err at: "+product_link)
 
     def expand_review(self):
         expand_review_buttons = self.driver.find_elements_by_css_selector('div.review-comment__count')
@@ -93,7 +105,6 @@ class Crawler:
         info_table = html.find("table").find("tbody").find_all("tr")
         for tr in info_table:
             product["info"][tr.find_all("td")[0].get_text()] = tr.find_all("td")[1].get_text()
-        # print(product)
         return product
 
     def get_product_review(self, review_html):
@@ -114,9 +125,11 @@ class Crawler:
                 conversations.append(sub_review)
             review = {'rate': star, 'conversations': conversations}
             reviews.append(review)
-        # print(reviews)
         return reviews
 
-    def test(self):
-        for link in self.get_link_to_product():
-            self.get_product_json(link)
+    def run(self):
+        page = self.get_page_html(self.Url)
+        while page:
+            for link in self.get_link_to_product(page):
+                self.get_product_json_and_save_to_mongo(link)
+            page = self.get_link_to_next_page(page)
