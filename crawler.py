@@ -16,12 +16,16 @@ class Crawler:
     chrome_option.add_argument("--incognito")
     chrome_option.add_argument("--window-size=1920x1080")
     driver = ''
+    waiting_for_page = ''
+    waiting_for_element = ''
 
     def __init__(self, base_Url, begin_url):
         self.base_Url = base_Url
         self.Url = begin_url
         self.driver = webdriver.Chrome(chrome_options=self.chrome_option,
                                        executable_path='/home/cedar-f/data/chrome_selenium_driver/chromedriver_linux64/chromedriver')
+        self.waiting_for_page = WebDriverWait(self.driver, 30)
+        self.waiting_for_element = WebDriverWait(self.driver, 8)
 
     def get_link_to_product(self):
         page = urllib.request.urlopen(self.Url)
@@ -38,15 +42,48 @@ class Crawler:
         html = self.driver.page_source
         product_json = self.get_product_info(html)
 
-        wait = WebDriverWait(self.driver, 5)
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.customer-reviews')))
-        review_html = self.driver.find_element_by_css_selector("div.customer-reviews").get_attribute('innerHTML')
+        for x in range(0, 3):
+            try:
+                self.waiting_for_element.until(
+                    EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.customer-reviews')))
+                self.expand_review()
 
-        self.get_product_review(review_html)
+                review_html = self.driver.find_element_by_css_selector("div.customer-reviews").get_attribute(
+                    'innerHTML')
 
-        next_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'a.next')))
-        next_button.click()
+                reviews = self.get_product_review(review_html)
+                try:
+                    while True:
+                        next_button = self.waiting_for_element.until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, 'a.next')))
+                        for i in range(0, 3):
+                            try:
+                                next_button.click()
+                                time.sleep(1)
+                                self.expand_review()
+                                review_html = self.driver.find_element_by_css_selector(
+                                    "div.customer-reviews").get_attribute(
+                                    'innerHTML')
+                                reviews += (self.get_product_review(review_html))
+                                break
+                            except:
+                                if i > 0:
+                                    print("====>try to get review: " + str(i))
+                except:
+                    product_json['reviews'] = reviews
+                    print(product_json)
+                    print('END OF PRODUCT')
+                    break
+            except:
+                print('try to load page: ' + str(x))
+
+    def expand_review(self):
+        expand_review_buttons = self.driver.find_elements_by_css_selector('div.review-comment__count')
+
+        for button in expand_review_buttons:
+            button.click()
+            time.sleep(0.2)
 
     def get_product_info(self, product_html):
         product = {}
@@ -56,19 +93,30 @@ class Crawler:
         info_table = html.find("table").find("tbody").find_all("tr")
         for tr in info_table:
             product["info"][tr.find_all("td")[0].get_text()] = tr.find_all("td")[1].get_text()
-        print(product)
+        # print(product)
         return product
 
     def get_product_review(self, review_html):
         html = BeautifulSoup(review_html, 'html.parser')
-        review = []
+        reviews = []
         review_container = html.find_all("div", class_="review-comment")
         for r in review_container:
             star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
-            conversation = []
-            conversation.append({r.find('span',class_='review-comment__avatar-name').get_text():r.find('div',
-                                                                                             class_='review-comment__content').get_text()})
-            print(conversation)
+            conversations = []
+
+            main_review = {r.find('span', class_='review-comment__avatar-name').get_text(): r.find('div',
+                                                                                                   class_='review-comment__content').get_text()}
+            conversations.append(main_review)
+            sub_conversations = r.find_all('div', class_='review-sub-comment')
+            for sub_c in sub_conversations:
+                sub_review = {sub_c.find('div', class_='review-sub-comment__avatar-name').get_text(): sub_c.find('div',
+                                                                                                                 class_='review-sub-comment__content').get_text()}
+                conversations.append(sub_review)
+            review = {'rate': star, 'conversations': conversations}
+            reviews.append(review)
+        # print(reviews)
+        return reviews
+
     def test(self):
         for link in self.get_link_to_product():
             self.get_product_json(link)
