@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 from export_to_mongo import Export as e
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 class Crawler:
@@ -53,6 +54,7 @@ class Crawler:
         product_json = self.get_product_info(html)
 
         self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1000)
         for x in range(0, 3):
             try:
                 self.waiting_for_element.until(
@@ -88,7 +90,8 @@ class Crawler:
                     print('END OF PRODUCT')
                     break
             except Exception as err:
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/4 * 3);")
+                ActionChains(self.driver).move_to_element(
+                    self.driver.find_element_by_css_selector('div.input-group')).perform()
                 print("###ERR AT 1st TRY: " + str(err))
                 print('try to load page: ' + str(x))
             print("err at: " + product_link)
