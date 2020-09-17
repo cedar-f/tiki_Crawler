@@ -52,7 +52,7 @@ class Crawler:
         html = self.driver.page_source
         product_json = self.get_product_info(html)
 
-        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/10 * 8);")
         for x in range(0, 3):
             try:
                 self.waiting_for_element.until(
