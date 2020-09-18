@@ -17,7 +17,6 @@ class Crawler:
     chrome_option.add_argument("--incognito")
     chrome_option.add_argument("--window-size=1920x1080")
     driver = ''
-    waiting_for_page = ''
     waiting_for_element = ''
     export = ''
 
@@ -26,8 +25,7 @@ class Crawler:
         self.Url = begin_url
         self.driver = webdriver.Chrome(chrome_options=self.chrome_option,
                                        executable_path='/home/cedar-f/data/chrome_selenium_driver/chromedriver_linux64/chromedriver')
-        self.waiting_for_page = WebDriverWait(self.driver, 60)
-        self.waiting_for_element = WebDriverWait(self.driver, 40)
+        self.waiting_for_element = WebDriverWait(self.driver, 5)
         self.export = e()
 
     def get_page_html(self, url):
@@ -51,11 +49,11 @@ class Crawler:
         self.driver.get(product_link)
 
         html = self.driver.page_source
+        time.sleep(0.5)
         product_json = self.get_product_info(html)
-
-        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        for x in range(0, 3):
+        for x in range(0, 20):
             try:
+                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/6 *5);")
                 self.waiting_for_element.until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.customer-reviews')))
                 self.expand_review()
@@ -136,5 +134,9 @@ class Crawler:
         page = self.get_page_html(self.Url)
         while page:
             for link in self.get_link_to_product(page):
-                self.get_product_json_and_save_to_mongo(link)
-            page = self.get_link_to_next_page(page)
+                try:
+                    self.get_product_json_and_save_to_mongo(link)
+                except:
+                    pass
+            link = self.get_link_to_next_page(page)
+            page = self.get_page_html(link)
