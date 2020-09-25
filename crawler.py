@@ -112,8 +112,7 @@ class Crawler:
         for r in review_container:
             star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
 
-            comment = {r.find('span', class_='review-comment__avatar-name').get_text(): r.find('div',
-                                                                                               class_='review-comment__content').get_text()}
+            comment = r.find('div', class_='review-comment__content').get_text()
             review = {'rate': star, 'comment': comment}
             self.export.one_to_mongo(review)
 
