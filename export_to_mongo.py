@@ -8,7 +8,13 @@ class Export:
     def __init__(self):
         self.mongo = mg.MongoClient("localhost", 27017)
 
-    def to_mongo(self, product):
+    def to_mongo(self, reviews):
         mydb = self.mongo["Crawl_data"]
         mycol = mydb["tiki"]
-        x = mycol.insert(product, check_keys=False)
+        for review in reviews:
+            try:
+                x = mycol.insert(review, check_keys=False)
+            except:
+                pass
+
+

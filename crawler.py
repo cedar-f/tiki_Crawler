@@ -50,13 +50,12 @@ class Crawler:
 
         html = self.driver.page_source
         time.sleep(0.5)
-        product_json = self.get_product_info(html)
+
         for x in range(0, 20):
             try:
                 self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight/6 *5);")
                 self.waiting_for_element.until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.customer-reviews')))
-                self.expand_review()
 
                 review_html = self.driver.find_element_by_css_selector("div.customer-reviews").get_attribute(
                     'innerHTML')
@@ -70,7 +69,6 @@ class Crawler:
                             try:
                                 next_button.click()
                                 time.sleep(1)
-                                self.expand_review()
                                 review_html = self.driver.find_element_by_css_selector(
                                     "div.customer-reviews").get_attribute(
                                     'innerHTML')
@@ -81,9 +79,8 @@ class Crawler:
                                 if i > 0:
                                     print("====>try to get review: " + str(i))
                 except Exception as err:
-                    product_json['reviews'] = reviews
-                    print(product_json)
-                    self.export.to_mongo(product_json)
+                    print(reviews)
+                    self.export.to_mongo(reviews)
                     print('END OF PRODUCT')
                     break
             except Exception as err:
@@ -116,17 +113,10 @@ class Crawler:
         review_container = html.find_all("div", class_="review-comment")
         for r in review_container:
             star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
-            conversations = []
 
-            main_review = {r.find('span', class_='review-comment__avatar-name').get_text(): r.find('div',
+            comment = {r.find('span', class_='review-comment__avatar-name').get_text(): r.find('div',
                                                                                                    class_='review-comment__content').get_text()}
-            conversations.append(main_review)
-            sub_conversations = r.find_all('div', class_='review-sub-comment')
-            for sub_c in sub_conversations:
-                sub_review = {sub_c.find('div', class_='review-sub-comment__avatar-name').get_text(): sub_c.find('div',
-                                                                                                                 class_='review-sub-comment__content').get_text()}
-                conversations.append(sub_review)
-            review = {'rate': star, 'conversations': conversations}
+            review = {'rate': star, 'comment': comment}
             reviews.append(review)
         return reviews
 
