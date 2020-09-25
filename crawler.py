@@ -44,7 +44,7 @@ class Crawler:
             list_link.append(self.base_Url + container.find('a').get('href'))
         return list_link
 
-    def get_product_json_and_save_to_mongo(self, product_link):
+    def get_product_json_to_mongo(self, product_link):
         print("crawling at: " + product_link)
         self.driver.get(product_link)
 
@@ -60,7 +60,7 @@ class Crawler:
                 review_html = self.driver.find_element_by_css_selector("div.customer-reviews").get_attribute(
                     'innerHTML')
 
-                reviews = self.get_product_review(review_html)
+                self.get_product_review_and_save_to_mongo(review_html)
                 try:
                     while True:
                         next_button = self.waiting_for_element.until(
@@ -72,15 +72,13 @@ class Crawler:
                                 review_html = self.driver.find_element_by_css_selector(
                                     "div.customer-reviews").get_attribute(
                                     'innerHTML')
-                                reviews += (self.get_product_review(review_html))
+                                self.get_product_review_and_save_to_mongo(review_html)
                                 break
                             except Exception as err:
                                 print("###ERR AT 3th TRY: " + str(err))
                                 if i > 0:
                                     print("====>try to get review: " + str(i))
                 except Exception as err:
-                    print(reviews)
-                    self.export.to_mongo(reviews)
                     print('END OF PRODUCT')
                     break
             except Exception as err:
@@ -107,7 +105,7 @@ class Crawler:
             product["info"][tr.find_all("td")[0].get_text()] = tr.find_all("td")[1].get_text()
         return product
 
-    def get_product_review(self, review_html):
+    def get_product_review_and_save_to_mongo(self, review_html):
         html = BeautifulSoup(review_html, 'html.parser')
         reviews = []
         review_container = html.find_all("div", class_="review-comment")
@@ -115,17 +113,16 @@ class Crawler:
             star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
 
             comment = {r.find('span', class_='review-comment__avatar-name').get_text(): r.find('div',
-                                                                                                   class_='review-comment__content').get_text()}
+                                                                                               class_='review-comment__content').get_text()}
             review = {'rate': star, 'comment': comment}
-            reviews.append(review)
-        return reviews
+            self.export.one_to_mongo(review)
 
     def run(self):
         page = self.get_page_html(self.Url)
         while page:
             for link in self.get_link_to_product(page):
                 try:
-                    self.get_product_json_and_save_to_mongo(link)
+                    self.get_product_json_to_mongo(link)
                 except:
                     pass
             link = self.get_link_to_next_page(page)
