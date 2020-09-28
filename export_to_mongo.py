@@ -14,7 +14,7 @@ class Export:
         for review in reviews:
             try:
                 x = mycol.insert(review, check_keys=False)
-            except:
+            except Exception as err:
                 print("err at export to mongo, message: " + str(err))
                 pass
 
