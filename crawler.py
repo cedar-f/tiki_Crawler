@@ -8,6 +8,7 @@ import time
 from export_to_mongo import Export as e
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
+import re
 
 
 class Crawler:
@@ -110,11 +111,15 @@ class Crawler:
         reviews = []
         review_container = html.find_all("div", class_="review-comment")
         for r in review_container:
-            star = len(r.find_all("i", class_="icomoon-star")) - len(r.find_all("i", class_="disable"))
-
-            comment = r.find('div', class_='review-comment__content').get_text()
-            review = {'rate': star, 'comment': comment}
-            self.export.one_to_mongo(review)
+            style = r.find_all("div", class_="Stars__StyledStars-sc-15olgyg-0").find('div')['style']
+            star = re.findall('width:.*?', style)
+            print(star)
+            if star == 3 or star == 4:
+                print(star)
+                print("saved")
+                comment = r.find('div', class_='review-comment__content').get_text()
+                review = {'rate': star, 'comment': comment}
+                self.export.one_to_mongo(review)
 
     def run(self):
         page = self.get_page_html(self.Url)
