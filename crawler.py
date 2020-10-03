@@ -111,11 +111,9 @@ class Crawler:
         reviews = []
         review_container = html.find_all("div", class_="review-comment")
         for r in review_container:
-            style = r.find_all("div", class_="Stars__StyledStars-sc-15olgyg-0").find('div')['style']
-            star = re.findall('width:.*?', style)
+            star = r.find("div", class_="Stars__StyledStars-sc-15olgyg-0").find('div')['style']
             print(star)
-            if star == 3 or star == 4:
-                print(star)
+            if star == 'width: 60%;' or star == 'width: 80%;':
                 print("saved")
                 comment = r.find('div', class_='review-comment__content').get_text()
                 review = {'rate': star, 'comment': comment}
