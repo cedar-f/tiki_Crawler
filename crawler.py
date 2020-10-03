@@ -48,7 +48,7 @@ class Crawler:
     def get_product_json_to_mongo(self, product_link):
         print("crawling at: " + product_link)
         self.driver.get(product_link)
-
+        self.write_current_link_to_file(product_link, 'current_product.txt')
         html = self.driver.page_source
         time.sleep(0.5)
 
@@ -89,6 +89,10 @@ class Crawler:
                 print('try to load page: ' + str(x))
             print("err at: " + product_link)
 
+    def write_current_link_to_file(self, link, file_name):
+        f = open(file_name, 'w')
+        f.write(link)
+
     def expand_review(self):
         expand_review_buttons = self.driver.find_elements_by_css_selector('div.review-comment__count')
 
@@ -121,11 +125,10 @@ class Crawler:
 
     def run(self):
         page = self.get_page_html(self.Url)
+        self.write_current_link_to_file(self.Url, 'current_page.txt')
         while page:
             for link in self.get_link_to_product(page):
-                try:
-                    self.get_product_json_to_mongo(link)
-                except:
-                    pass
+                self.get_product_json_to_mongo(link)
             link = self.get_link_to_next_page(page)
+            self.write_current_link_to_file(link, 'current_page.txt')
             page = self.get_page_html(link)
