@@ -19,8 +19,8 @@ class Export:
                 pass
 
     def one_to_mongo(self, review):
-        mydb = self.mongo["Crawl_data"]
-        mycol = mydb["tiki"]
+        mydb = self.mongo["product_vinmart"]
+        mycol = mydb["product"]
         try:
             x = mycol.insert(review, check_keys=False)
         except Exception as err:
