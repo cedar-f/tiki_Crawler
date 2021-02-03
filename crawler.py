@@ -105,4 +105,5 @@ class Crawler:
         self.export.one_to_mongo(product)
 
     def run(self):
-        self.get_product_json_to_mongo(self.base_Url)
+        for url in self.base_Url:
+            self.get_product_json_to_mongo(url)
